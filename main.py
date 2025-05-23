@@ -10,6 +10,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import threading
 import re
+from datetime import datetime
 
 # 添加获取应用程序路径的函数
 def get_application_path():
@@ -76,9 +77,11 @@ def update_makefiles_with_correct_paths(callback=None):
     """
     # 用于记录和显示信息的帮助函数
     def show_message(message, is_error=False):
-        print(message)
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        full_msg = f"[{timestamp}] {message}"
+        print(full_msg)
         if callback:
-            callback(message, is_error)
+            callback(full_msg, is_error)
     
     # 使用新的应用程序路径获取函数
     script_dir = get_application_path()
@@ -137,7 +140,7 @@ def update_makefiles_with_correct_paths(callback=None):
                     used_encoding = encoding
                     show_message("Successfully read file with {} encoding".format(encoding))
                     break
-                except UniLOC_COMPILEDeLOC_COMPILEError:
+                except UnicodeDecodeError:
                     show_message("Cannot read file with {} encoding, trying next...".format(encoding))
                     continue
             
