@@ -129,8 +129,7 @@ class VcuCompilerUI:
         ttk.Label(mvcu_frame, textvariable=self.mvcu_path_var).grid(row=0, column=1, padx=5, sticky="ew")
 
         # makefile 路径变量（用于在更新路径后显示）
-        self.mvcu_makefile_var = tk.StringVar()
-        self.mvcu_makefile_var.set("")
+        self.mvcu_makefile_var = tk.StringVar(value="-")
 
         # SVCU路径
         svcu_frame = ttk.Frame(msys_path_frame, padding="2")
@@ -143,14 +142,23 @@ class VcuCompilerUI:
 
         ttk.Label(svcu_frame, textvariable=self.svcu_path_var).grid(row=0, column=1, padx=5, sticky="ew")
 
-        self.svcu_makefile_var = tk.StringVar()
-        self.svcu_makefile_var.set("")
+        self.svcu_makefile_var = tk.StringVar(value="-")
 
-        
+        # Makefile 路径显示区域
+        makefile_frame = ttk.LabelFrame(main_frame, text="Makefile路径", padding="5")
+        makefile_frame.grid(row=3, column=0, sticky="ew", pady=5)
+        makefile_frame.columnconfigure(1, weight=1)
+
+        ttk.Label(makefile_frame, text="MVCU makefile:").grid(row=0, column=0, padx=5, sticky="w")
+        ttk.Label(makefile_frame, textvariable=self.mvcu_makefile_var).grid(row=0, column=1, padx=5, sticky="ew")
+
+        ttk.Label(makefile_frame, text="SVCU makefile:").grid(row=1, column=0, padx=5, sticky="w")
+        ttk.Label(makefile_frame, textvariable=self.svcu_makefile_var).grid(row=1, column=1, padx=5, sticky="ew")
+
         # 显示操作日志的文本框
         log_frame = ttk.LabelFrame(main_frame, text="操作日志", padding="5")
-        log_frame.grid(row=3, column=0, sticky="nsew", pady=10)
-        main_frame.rowconfigure(3, weight=1)
+        log_frame.grid(row=4, column=0, sticky="nsew", pady=10)
+        main_frame.rowconfigure(4, weight=1)
         
         self.log_text = scrolledtext.ScrolledText(
 
@@ -161,7 +169,7 @@ class VcuCompilerUI:
         
         # 底部按钮区域
         btn_frame = ttk.Frame(main_frame, padding="5")
-        btn_frame.grid(row=4, column=0, sticky="e", pady=10)
+        btn_frame.grid(row=5, column=0, sticky="e", pady=10)
         
         self.compile_btn = ttk.Button(btn_frame, text="开始编译", command=self.start_compile)
         self.compile_btn.grid(row=0, column=1, padx=5)
