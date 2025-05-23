@@ -127,7 +127,11 @@ class VcuCompilerUI:
         self.mvcu_path_var = tk.StringVar()
         self.mvcu_path_var.set(mvcu_path if mvcu_path else "未设置")
         ttk.Label(mvcu_frame, textvariable=self.mvcu_path_var).grid(row=0, column=1, padx=5, sticky="ew")
-        
+
+        # makefile 路径变量（用于在更新路径后显示）
+        self.mvcu_makefile_var = tk.StringVar()
+        self.mvcu_makefile_var.set("")
+
         # SVCU路径
         svcu_frame = ttk.Frame(msys_path_frame, padding="2")
         svcu_frame.grid(row=1, column=0, sticky="ew")
@@ -138,6 +142,9 @@ class VcuCompilerUI:
         self.svcu_path_var.set(svcu_path if svcu_path else "未设置")
 
         ttk.Label(svcu_frame, textvariable=self.svcu_path_var).grid(row=0, column=1, padx=5, sticky="ew")
+
+        self.svcu_makefile_var = tk.StringVar()
+        self.svcu_makefile_var.set("")
 
         
         # 显示操作日志的文本框
