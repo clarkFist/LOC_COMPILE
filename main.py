@@ -12,6 +12,20 @@ import threading
 import re
 from datetime import datetime
 
+# 输出结果归档函数
+def archive_output_files(output_dir):
+    """在输出目录下创建带时间戳的out文件夹，并复制 .s19 和 .lze 文件"""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    dest_dir = os.path.join(output_dir, f"out_{timestamp}")
+    os.makedirs(dest_dir, exist_ok=True)
+
+    for name in os.listdir(output_dir):
+        if name.lower().endswith((".s19", ".lze")):
+            src = os.path.join(output_dir, name)
+            shutil.copy2(src, os.path.join(dest_dir, name))
+
+    return dest_dir
+
 # 添加获取应用程序路径的函数
 def get_application_path():
     """获取应用程序的实际路径，适用于打包后的EXE文件"""
@@ -176,7 +190,7 @@ def update_makefiles_with_correct_paths(callback=None):
                 
                 success_msg = "Successfully updated {} makefile: {}".format(makefile_type, makefile_path)
                 show_message(success_msg)
-                results.append({"type": makefile_type, "success": True, "message": success_msg})
+                results.append({"type": makefile_type, "success": True, "message": success_msg, "path": makefile_path})
             except Exception as e:
                 error_msg = "Failed to update makefile content: {}, error: {}".format(makefile_path, e)
                 show_message(error_msg, is_error=True)
@@ -417,18 +431,19 @@ def process_in_console_mode(source_path):
             subprocess.Popen(["cmd", "/c", "start", "", msys_bat_path])
             print("MSYS已启动")
             
-            # 编译完成后，打开对应的输出文件夹
+            # 编译完成后，归档并打开对应的输出文件夹
             if vcu_type == "m":
                 output_dir = os.path.join(vcu_project_dir, "dev_kernel_mvcu", "build", "out")
-                if os.path.exists(output_dir):
-                    print(f"打开MVCU输出文件夹: {output_dir}")
-                    os.startfile(output_dir)
             elif vcu_type == "s":
                 output_dir = os.path.join(vcu_project_dir, "dev_kernel_svcu", "build", "out")
-                if os.path.exists(output_dir):
-                    print(f"打开SVCU输出文件夹: {output_dir}")
-                    os.startfile(output_dir)
-            
+            else:
+                output_dir = None
+
+            if output_dir and os.path.exists(output_dir):
+                archived_dir = archive_output_files(output_dir)
+                print(f"打开输出文件夹: {archived_dir}")
+                os.startfile(archived_dir)
+
             return True
         else:
             print(f"错误: 找不到MSYS批处理文件: {msys_bat_path}")

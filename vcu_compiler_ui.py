@@ -26,13 +26,13 @@ def get_application_path():
 
 # 导入必要的模块
 try:
-    from main import check_modules_in_makefile
+    from main import check_modules_in_makefile, archive_output_files
 except ImportError:
     # 如果在当前目录找不到，尝试从同级目录导入
     LOC_COMPILE_dir = os.path.dirname(os.path.abspath(__file__))
     sys.path.append(LOC_COMPILE_dir)
     try:
-        from main import check_modules_in_makefile
+        from main import check_modules_in_makefile, archive_output_files
     except ImportError:
         # 避免循环导入
         check_modules_in_makefile = None
@@ -127,7 +127,10 @@ class VcuCompilerUI:
         self.mvcu_path_var = tk.StringVar()
         self.mvcu_path_var.set(mvcu_path if mvcu_path else "未设置")
         ttk.Label(mvcu_frame, textvariable=self.mvcu_path_var).grid(row=0, column=1, padx=5, sticky="ew")
-        
+
+        # makefile 路径变量（用于在更新路径后显示）
+        self.mvcu_makefile_var = tk.StringVar(value="-")
+
         # SVCU路径
         svcu_frame = ttk.Frame(msys_path_frame, padding="2")
         svcu_frame.grid(row=1, column=0, sticky="ew")
@@ -136,21 +139,37 @@ class VcuCompilerUI:
         
         self.svcu_path_var = tk.StringVar()
         self.svcu_path_var.set(svcu_path if svcu_path else "未设置")
+
         ttk.Label(svcu_frame, textvariable=self.svcu_path_var).grid(row=0, column=1, padx=5, sticky="ew")
-        
+
+        self.svcu_makefile_var = tk.StringVar(value="-")
+
+        # Makefile 路径显示区域
+        makefile_frame = ttk.LabelFrame(main_frame, text="Makefile路径", padding="5")
+        makefile_frame.grid(row=3, column=0, sticky="ew", pady=5)
+        makefile_frame.columnconfigure(1, weight=1)
+
+        ttk.Label(makefile_frame, text="MVCU makefile:").grid(row=0, column=0, padx=5, sticky="w")
+        ttk.Label(makefile_frame, textvariable=self.mvcu_makefile_var).grid(row=0, column=1, padx=5, sticky="ew")
+
+        ttk.Label(makefile_frame, text="SVCU makefile:").grid(row=1, column=0, padx=5, sticky="w")
+        ttk.Label(makefile_frame, textvariable=self.svcu_makefile_var).grid(row=1, column=1, padx=5, sticky="ew")
+
         # 显示操作日志的文本框
         log_frame = ttk.LabelFrame(main_frame, text="操作日志", padding="5")
-        log_frame.grid(row=3, column=0, sticky="nsew", pady=10)
-        main_frame.rowconfigure(3, weight=1)
+        log_frame.grid(row=4, column=0, sticky="nsew", pady=10)
+        main_frame.rowconfigure(4, weight=1)
         
         self.log_text = scrolledtext.ScrolledText(
+
             log_frame, wrap=tk.WORD, font=("Consolas", 9)
+
         )
         self.log_text.pack(fill=tk.BOTH, expand=True)
         
         # 底部按钮区域
         btn_frame = ttk.Frame(main_frame, padding="5")
-        btn_frame.grid(row=4, column=0, sticky="e", pady=10)
+        btn_frame.grid(row=5, column=0, sticky="e", pady=10)
         
         self.compile_btn = ttk.Button(btn_frame, text="开始编译", command=self.start_compile)
         self.compile_btn.grid(row=0, column=1, padx=5)
@@ -182,6 +201,7 @@ class VcuCompilerUI:
             self.log_text.tag_configure("error", foreground="red")
         if "success" not in self.log_text.tag_names():
             self.log_text.tag_configure("success", foreground="green")
+
         if "warning" not in self.log_text.tag_names():
             self.log_text.tag_configure("warning", foreground="orange")
 
@@ -194,12 +214,16 @@ class VcuCompilerUI:
         else:
             tag = "info"
 
+
         if message.startswith("["):
             formatted = message
         else:
             timestamp = datetime.now().strftime("%H:%M:%S")
             formatted = f"[{timestamp}] {message}"
+
+        self.log_text.config(state=tk.NORMAL)
         self.log_text.insert(tk.END, formatted + "\n", tag)
+        self.log_text.config(state=tk.DISABLED)
         self.log_text.see(tk.END)  # 滚动到最新行
 
     
@@ -233,9 +257,16 @@ class VcuCompilerUI:
         """在线程中运行路径更新"""
         try:
             results = self.update_path_function(callback)
-            
+
             # 处理结果
             success = all(item["success"] for item in results) if results else False
+
+            for item in results:
+                if item.get("success") and item.get("path"):
+                    if item["type"] == "MVCU":
+                        self.mvcu_makefile_var.set(item["path"])
+                    elif item["type"] == "SVCU":
+                        self.svcu_makefile_var.set(item["path"])
             
             # 在UI线程中更新UI
             self.root.after(0, lambda: self._update_ui_after_path_update(success))
@@ -464,14 +495,15 @@ class VcuCompilerUI:
             if hasattr(self, 'vcu_type'):
                 if self.vcu_type == "m":
                     output_dir = os.path.join(script_dir, "VCU_compile - selftest", "dev_kernel_mvcu", "build", "out")
-                    if os.path.exists(output_dir):
-                        self.log(f"打开MVCU输出文件夹: {output_dir}")
-                        os.startfile(output_dir)
                 elif self.vcu_type == "s":
                     output_dir = os.path.join(script_dir, "VCU_compile - selftest", "dev_kernel_svcu", "build", "out")
-                    if os.path.exists(output_dir):
-                        self.log(f"打开SVCU输出文件夹: {output_dir}")
-                        os.startfile(output_dir)
+                else:
+                    output_dir = None
+
+                if output_dir and os.path.exists(output_dir):
+                    archived_dir = archive_output_files(output_dir)
+                    self.log(f"打开输出文件夹: {archived_dir}")
+                    os.startfile(archived_dir)
         else:
             self.status_var.set("编译失败")
             self.log("编译过程失败")
