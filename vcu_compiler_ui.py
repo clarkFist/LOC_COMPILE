@@ -136,7 +136,9 @@ class VcuCompilerUI:
         
         self.svcu_path_var = tk.StringVar()
         self.svcu_path_var.set(svcu_path if svcu_path else "未设置")
+
         ttk.Label(svcu_frame, textvariable=self.svcu_path_var).grid(row=0, column=1, padx=5, sticky="ew")
+
         
         # 显示操作日志的文本框
         log_frame = ttk.LabelFrame(main_frame, text="操作日志", padding="5")
@@ -144,7 +146,9 @@ class VcuCompilerUI:
         main_frame.rowconfigure(3, weight=1)
         
         self.log_text = scrolledtext.ScrolledText(
+
             log_frame, wrap=tk.WORD, font=("Consolas", 9)
+
         )
         self.log_text.pack(fill=tk.BOTH, expand=True)
         
@@ -182,6 +186,7 @@ class VcuCompilerUI:
             self.log_text.tag_configure("error", foreground="red")
         if "success" not in self.log_text.tag_names():
             self.log_text.tag_configure("success", foreground="green")
+
         if "warning" not in self.log_text.tag_names():
             self.log_text.tag_configure("warning", foreground="orange")
 
@@ -194,12 +199,16 @@ class VcuCompilerUI:
         else:
             tag = "info"
 
+
         if message.startswith("["):
             formatted = message
         else:
             timestamp = datetime.now().strftime("%H:%M:%S")
             formatted = f"[{timestamp}] {message}"
+
+        self.log_text.config(state=tk.NORMAL)
         self.log_text.insert(tk.END, formatted + "\n", tag)
+        self.log_text.config(state=tk.DISABLED)
         self.log_text.see(tk.END)  # 滚动到最新行
 
     
@@ -233,9 +242,16 @@ class VcuCompilerUI:
         """在线程中运行路径更新"""
         try:
             results = self.update_path_function(callback)
-            
+
             # 处理结果
             success = all(item["success"] for item in results) if results else False
+
+            for item in results:
+                if item.get("success") and item.get("path"):
+                    if item["type"] == "MVCU":
+                        self.mvcu_makefile_var.set(item["path"])
+                    elif item["type"] == "SVCU":
+                        self.svcu_makefile_var.set(item["path"])
             
             # 在UI线程中更新UI
             self.root.after(0, lambda: self._update_ui_after_path_update(success))
