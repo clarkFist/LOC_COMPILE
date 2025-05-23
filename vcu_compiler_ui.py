@@ -7,8 +7,9 @@ import subprocess
 import shutil
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk, scrolledtext
-from datetime import datetime
+
 import threading
+from datetime import datetime
 
 # 添加获取应用程序路径的函数
 def get_application_path():
@@ -43,7 +44,9 @@ class VcuCompilerUI:
     def __init__(self, root, update_path_function=None, mvcu_path=None, svcu_path=None):
         self.root = root
         self.root.title("VCU编译器")
-        self.root.geometry("700x600")  # 调整默认窗口尺寸
+
+        self.root.geometry("700x600")  # 默认尺寸
+
         self.root.minsize(600, 500)
         self.root.resizable(True, True)
         
@@ -172,6 +175,7 @@ class VcuCompilerUI:
             formatted = f"[{timestamp}] {message}"
         self.log_text.insert(tk.END, formatted + "\n", tag)
         self.log_text.see(tk.END)  # 滚动到最新行
+
     
     def update_compiler_paths(self):
         """更新编译器路径"""
@@ -280,6 +284,9 @@ class VcuCompilerUI:
         # 禁用编译按钮，避免重复操作
         self.compile_btn.config(state=tk.DISABLED)
         self.status_var.set("正在编译...")
+
+        # 清空日志，开始新的编译
+        self.log_text.delete(1.0, tk.END)
         
         # 在新线程中运行编译过程，避免UI卡顿
         threading.Thread(target=self.compile_process, args=(source_path,), daemon=True).start()

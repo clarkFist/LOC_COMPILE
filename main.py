@@ -77,9 +77,12 @@ def update_makefiles_with_correct_paths(callback=None):
     """
     # 用于记录和显示信息的帮助函数
     def show_message(message, is_error=False):
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        full_msg = f"[{timestamp}] {message}"
-        print(full_msg)
+
+        if not message.startswith("["):
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            message = f"[{timestamp}] {message}"
+        print(message)
+
         if callback:
             callback(full_msg, is_error)
     
