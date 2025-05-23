@@ -26,13 +26,13 @@ def get_application_path():
 
 # 导入必要的模块
 try:
-    from main import check_modules_in_makefile
+    from main import check_modules_in_makefile, archive_output_files
 except ImportError:
     # 如果在当前目录找不到，尝试从同级目录导入
     LOC_COMPILE_dir = os.path.dirname(os.path.abspath(__file__))
     sys.path.append(LOC_COMPILE_dir)
     try:
-        from main import check_modules_in_makefile
+        from main import check_modules_in_makefile, archive_output_files
     except ImportError:
         # 避免循环导入
         check_modules_in_makefile = None
@@ -464,14 +464,15 @@ class VcuCompilerUI:
             if hasattr(self, 'vcu_type'):
                 if self.vcu_type == "m":
                     output_dir = os.path.join(script_dir, "VCU_compile - selftest", "dev_kernel_mvcu", "build", "out")
-                    if os.path.exists(output_dir):
-                        self.log(f"打开MVCU输出文件夹: {output_dir}")
-                        os.startfile(output_dir)
                 elif self.vcu_type == "s":
                     output_dir = os.path.join(script_dir, "VCU_compile - selftest", "dev_kernel_svcu", "build", "out")
-                    if os.path.exists(output_dir):
-                        self.log(f"打开SVCU输出文件夹: {output_dir}")
-                        os.startfile(output_dir)
+                else:
+                    output_dir = None
+
+                if output_dir and os.path.exists(output_dir):
+                    archived_dir = archive_output_files(output_dir)
+                    self.log(f"打开输出文件夹: {archived_dir}")
+                    os.startfile(archived_dir)
         else:
             self.status_var.set("编译失败")
             self.log("编译过程失败")
