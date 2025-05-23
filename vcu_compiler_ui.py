@@ -6,8 +6,9 @@ import sys
 import subprocess
 import shutil
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, ttk, scrolledtext
 import threading
+from datetime import datetime
 
 # 添加获取应用程序路径的函数
 def get_application_path():
@@ -42,7 +43,8 @@ class VcuCompilerUI:
     def __init__(self, root, update_path_function=None, mvcu_path=None, svcu_path=None):
         self.root = root
         self.root.title("VCU编译器")
-        self.root.geometry("600x550")  # 增加窗口高度以容纳路径显示
+        self.root.geometry("700x600")  # 默认尺寸
+        self.root.minsize(600, 500)
         self.root.resizable(True, True)
         
         # 保存路径更新函数
@@ -123,12 +125,10 @@ class VcuCompilerUI:
         log_frame = ttk.LabelFrame(main_frame, text="操作日志", padding="5")
         log_frame.pack(fill=tk.BOTH, expand=True, pady=10)
         
-        self.log_text = tk.Text(log_frame, wrap=tk.WORD, width=70, height=15)
-        self.log_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        
-        scrollbar = ttk.Scrollbar(log_frame, orient=tk.VERTICAL, command=self.log_text.yview)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.log_text.config(yscrollcommand=scrollbar.set)
+        self.log_text = scrolledtext.ScrolledText(
+            log_frame, wrap=tk.WORD, width=70, height=15, font=("Consolas", 9)
+        )
+        self.log_text.pack(fill=tk.BOTH, expand=True)
         
         # 底部按钮区域
         btn_frame = ttk.Frame(main_frame, padding="5")
@@ -158,14 +158,19 @@ class VcuCompilerUI:
     
     def log(self, message, is_error=False):
         """向日志文本框添加消息"""
-        tag = "error" if is_error else None
-        
-        # 配置错误标签为红色
-        if is_error and "error" not in self.log_text.tag_names():
+        tag = "error" if is_error else "info"
+
+        if "info" not in self.log_text.tag_names():
+            self.log_text.tag_configure("info", foreground="black")
+        if "error" not in self.log_text.tag_names():
             self.log_text.tag_configure("error", foreground="red")
-        
+
+        if not message.startswith("["):
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            message = f"[{timestamp}] {message}"
+
         self.log_text.insert(tk.END, message + "\n", tag)
-        self.log_text.see(tk.END)  # 滚动到最新行
+        self.log_text.see(tk.END)
     
     def update_compiler_paths(self):
         """更新编译器路径"""
@@ -274,6 +279,9 @@ class VcuCompilerUI:
         # 禁用编译按钮，避免重复操作
         self.compile_btn.config(state=tk.DISABLED)
         self.status_var.set("正在编译...")
+
+        # 清空日志，开始新的编译
+        self.log_text.delete(1.0, tk.END)
         
         # 在新线程中运行编译过程，避免UI卡顿
         threading.Thread(target=self.compile_process, args=(source_path,), daemon=True).start()
