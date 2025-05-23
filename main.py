@@ -28,16 +28,23 @@ def archive_output_files(output_dir):
 
 # 添加获取应用程序路径的函数
 def get_application_path():
-    """获取应用程序的实际路径，适用于打包后的EXE文件"""
+    """获取程序运行目录，用于存放输出等可写文件"""
     if getattr(sys, 'frozen', False):
-        # 如果应用程序已被打包
+        # 打包状态下返回可执行文件所在目录
         return os.path.dirname(sys.executable)
     else:
-        # 如果是直接运行脚本
-        # 获取当前脚本所在的LOC_COMPILE目录
-        LOC_COMPILE_dir = os.path.dirname(os.path.abspath(__file__))
-        # 返回项目根目录
-        return os.path.dirname(LOC_COMPILE_dir)
+        # 开发环境中返回项目根目录的上级目录
+        loc_dir = os.path.dirname(os.path.abspath(__file__))
+        return os.path.dirname(loc_dir)
+
+
+def get_resource_path(*path_parts):
+    """获取资源文件所在目录，兼容 PyInstaller"""
+    if getattr(sys, 'frozen', False):
+        base = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+    else:
+        base = get_application_path()
+    return os.path.join(base, *path_parts)
 
 # 确保项目目录结构正确存在
 def ensure_project_structure():
@@ -104,8 +111,8 @@ def update_makefiles_with_correct_paths(callback=None):
         if callback:
             callback(message, is_error)
     
-    # 使用新的应用程序路径获取函数
-    script_dir = get_application_path()
+    # 获取资源路径
+    script_dir = get_resource_path()
     
     # 确保盘符是大写的
     if script_dir.startswith("c:"):
@@ -205,8 +212,8 @@ def update_makefiles_with_correct_paths(callback=None):
 
 def update_msys_profile():
     """更新MSYS的profile文件，使用简单的路径指定方式"""
-    # 获取当前脚本所在目录
-    script_dir = get_application_path()
+    # 获取资源目录
+    script_dir = get_resource_path()
     
     # 确保盘符是大写的
     if script_dir.startswith("c:"):
@@ -342,6 +349,7 @@ def process_in_console_mode(source_path):
     """命令行模式下的处理逻辑"""
     # 获取当前脚本所在目录
     script_dir = get_application_path()
+    resource_dir = get_resource_path()
     
     # 项目根目录
     vcu_project_dir = os.path.join(script_dir, "VCU_compile - selftest")
@@ -425,7 +433,7 @@ def process_in_console_mode(source_path):
                 return False
         
         # 启动MSYS
-        msys_bat_path = os.path.join(script_dir, "MSYS-1.0.10-selftest", "1.0", "msys.bat")
+        msys_bat_path = os.path.join(resource_dir, "MSYS-1.0.10-selftest", "1.0", "msys.bat")
         if os.path.exists(msys_bat_path):
             print(f"启动MSYS: {msys_bat_path}")
             subprocess.Popen(["cmd", "/c", "start", "", msys_bat_path])
