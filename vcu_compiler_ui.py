@@ -7,6 +7,7 @@ import subprocess
 import shutil
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk, scrolledtext
+
 import threading
 from datetime import datetime
 
@@ -43,7 +44,9 @@ class VcuCompilerUI:
     def __init__(self, root, update_path_function=None, mvcu_path=None, svcu_path=None):
         self.root = root
         self.root.title("VCU编译器")
+
         self.root.geometry("700x600")  # 默认尺寸
+
         self.root.minsize(600, 500)
         self.root.resizable(True, True)
         
@@ -165,12 +168,14 @@ class VcuCompilerUI:
         if "error" not in self.log_text.tag_names():
             self.log_text.tag_configure("error", foreground="red")
 
-        if not message.startswith("["):
+        if message.startswith("["):
+            formatted = message
+        else:
             timestamp = datetime.now().strftime("%H:%M:%S")
-            message = f"[{timestamp}] {message}"
+            formatted = f"[{timestamp}] {message}"
+        self.log_text.insert(tk.END, formatted + "\n", tag)
+        self.log_text.see(tk.END)  # 滚动到最新行
 
-        self.log_text.insert(tk.END, message + "\n", tag)
-        self.log_text.see(tk.END)
     
     def update_compiler_paths(self):
         """更新编译器路径"""

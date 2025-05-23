@@ -77,12 +77,14 @@ def update_makefiles_with_correct_paths(callback=None):
     """
     # 用于记录和显示信息的帮助函数
     def show_message(message, is_error=False):
+
         if not message.startswith("["):
             timestamp = datetime.now().strftime("%H:%M:%S")
             message = f"[{timestamp}] {message}"
         print(message)
+
         if callback:
-            callback(message, is_error)
+            callback(full_msg, is_error)
     
     # 使用新的应用程序路径获取函数
     script_dir = get_application_path()
