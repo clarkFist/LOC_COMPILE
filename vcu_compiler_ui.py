@@ -353,6 +353,7 @@ class VcuCompilerUI:
         try:
             # 获取当前脚本所在目录
             script_dir = get_application_path()
+            resource_dir = get_resource_path()
             
             # 首先确保我们有最新的路径信息
             global update_msys_profile
@@ -452,7 +453,7 @@ class VcuCompilerUI:
                 self.log("无法进行模块检查，需要重新运行程序")
             
             # 启动MSYS
-            msys_bat_path = os.path.join(script_dir, "MSYS-1.0.10-selftest", "1.0", "msys.bat")
+            msys_bat_path = os.path.join(resource_dir, "MSYS-1.0.10-selftest", "1.0", "msys.bat")
             if os.path.exists(msys_bat_path):
                 self.log(f"启动MSYS: {msys_bat_path}")
                 subprocess.Popen(["cmd", "/c", "start", "", msys_bat_path])

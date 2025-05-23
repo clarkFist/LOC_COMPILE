@@ -11,7 +11,9 @@ from datetime import datetime
 
 def build_executable():
     """使用 PyInstaller 打包項目"""
-    project_root = os.path.dirname(os.path.abspath(__file__))
+    loc_dir = os.path.dirname(os.path.abspath(__file__))
+    # 与 main.py 中的 get_application_path() 保持一致，资源目录位于上级
+    project_root = os.path.dirname(loc_dir)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     exe_name = f"LOC_COMPILE_{timestamp}"
@@ -34,7 +36,7 @@ def build_executable():
         "--noconsole",
         "--name",
         exe_name,
-        os.path.join(project_root, "main.py"),
+        os.path.join(loc_dir, "main.py"),
     ]
 
     # 搜索可能需要打包的數據目錄
