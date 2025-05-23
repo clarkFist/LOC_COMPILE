@@ -17,18 +17,18 @@ def get_application_path():
         return os.path.dirname(sys.executable)
     else:
         # 如果是直接运行脚本
-        # 获取当前脚本所在的code目录
-        code_dir = os.path.dirname(os.path.abspath(__file__))
+        # 获取当前脚本所在的LOC_COMPILE目录
+        LOC_COMPILE_dir = os.path.dirname(os.path.abspath(__file__))
         # 返回项目根目录
-        return os.path.dirname(code_dir)
+        return os.path.dirname(LOC_COMPILE_dir)
 
 # 导入必要的模块
 try:
     from main import check_modules_in_makefile
 except ImportError:
     # 如果在当前目录找不到，尝试从同级目录导入
-    code_dir = os.path.dirname(os.path.abspath(__file__))
-    sys.path.append(code_dir)
+    LOC_COMPILE_dir = os.path.dirname(os.path.abspath(__file__))
+    sys.path.append(LOC_COMPILE_dir)
     try:
         from main import check_modules_in_makefile
     except ImportError:

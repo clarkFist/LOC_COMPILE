@@ -19,10 +19,10 @@ def get_application_path():
         return os.path.dirname(sys.executable)
     else:
         # 如果是直接运行脚本
-        # 获取当前脚本所在的code目录
-        code_dir = os.path.dirname(os.path.abspath(__file__))
+        # 获取当前脚本所在的LOC_COMPILE目录
+        LOC_COMPILE_dir = os.path.dirname(os.path.abspath(__file__))
         # 返回项目根目录
-        return os.path.dirname(code_dir)
+        return os.path.dirname(LOC_COMPILE_dir)
 
 # 确保项目目录结构正确存在
 def ensure_project_structure():
@@ -58,8 +58,8 @@ try:
 except ImportError:
     # 如果在同一目录下找不到，定义一个路径变量
     script_dir = get_application_path()
-    code_dir = os.path.join(script_dir, "code")
-    sys.path.append(code_dir)
+    LOC_COMPILE_dir = os.path.join(script_dir, "LOC_COMPILE")
+    sys.path.append(LOC_COMPILE_dir)
     try:
         from vcu_compiler_ui import VcuCompilerUI
     except ImportError:
@@ -137,7 +137,7 @@ def update_makefiles_with_correct_paths(callback=None):
                     used_encoding = encoding
                     show_message("Successfully read file with {} encoding".format(encoding))
                     break
-                except UnicodeDecodeError:
+                except UniLOC_COMPILEDeLOC_COMPILEError:
                     show_message("Cannot read file with {} encoding, trying next...".format(encoding))
                     continue
             
