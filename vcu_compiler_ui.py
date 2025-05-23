@@ -45,10 +45,14 @@ class VcuCompilerUI:
         self.root = root
         self.root.title("VCU编译器")
 
-        self.root.geometry("700x600")  # 默认尺寸
+        self.root.geometry("800x600")  # 默认尺寸
 
         self.root.minsize(600, 500)
         self.root.resizable(True, True)
+
+        # 布局配置
+        self.root.columnconfigure(0, weight=1)
+        self.root.rowconfigure(0, weight=1)
         
         # 保存路径更新函数
         self.update_path_function = update_path_function
@@ -68,86 +72,97 @@ class VcuCompilerUI:
         
         # 设置样式
         self.style = ttk.Style()
+        try:
+            self.style.theme_use("clam")
+        except Exception:
+            pass
         self.style.configure("TButton", font=("微软雅黑", 10))
         self.style.configure("TLabel", font=("微软雅黑", 10))
         
         # 创建主框架
         main_frame = ttk.Frame(root, padding="10")
-        main_frame.pack(fill=tk.BOTH, expand=True)
+        main_frame.grid(row=0, column=0, sticky="nsew")
+        main_frame.columnconfigure(0, weight=1)
         
         # 创建源路径选择区域
         path_frame = ttk.Frame(main_frame, padding="5")
-        path_frame.pack(fill=tk.X, pady=5)
+        path_frame.grid(row=0, column=0, sticky="ew", pady=5)
+        path_frame.columnconfigure(1, weight=1)
         
-        ttk.Label(path_frame, text="源路径:").pack(side=tk.LEFT, padx=5)
-        
+        ttk.Label(path_frame, text="源路径:").grid(row=0, column=0, padx=5, sticky="w")
+
         self.path_var = tk.StringVar()
-        path_entry = ttk.Entry(path_frame, textvariable=self.path_var, width=50)
-        path_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
-        
+        path_entry = ttk.Entry(path_frame, textvariable=self.path_var)
+        path_entry.grid(row=0, column=1, padx=5, sticky="ew")
+
         browse_btn = ttk.Button(path_frame, text="浏览...", command=self.browse_path)
-        browse_btn.pack(side=tk.LEFT, padx=5)
+        browse_btn.grid(row=0, column=2, padx=5)
         
         # 添加更新路径按钮
         path_update_frame = ttk.Frame(main_frame, padding="5")
-        path_update_frame.pack(fill=tk.X, pady=5)
+        path_update_frame.grid(row=1, column=0, sticky="ew", pady=5)
+        path_update_frame.columnconfigure(1, weight=1)
         
-        self.update_path_btn = ttk.Button(path_update_frame, text="更新编译器路径", 
+        self.update_path_btn = ttk.Button(path_update_frame, text="更新编译器路径",
                                          command=self.update_compiler_paths)
-        self.update_path_btn.pack(side=tk.LEFT, padx=5)
-        
+        self.update_path_btn.grid(row=0, column=0, padx=5, sticky="w")
+
         # 添加路径状态标签
         self.path_status_var = tk.StringVar()
         self.path_status_var.set("编译器路径状态: 未检查")
         path_status_label = ttk.Label(path_update_frame, textvariable=self.path_status_var)
-        path_status_label.pack(side=tk.LEFT, padx=10)
+        path_status_label.grid(row=0, column=1, padx=10, sticky="w")
         
         # 添加MSYS路径信息区域
         msys_path_frame = ttk.LabelFrame(main_frame, text="MSYS路径信息", padding="5")
-        msys_path_frame.pack(fill=tk.X, pady=5)
+        msys_path_frame.grid(row=2, column=0, sticky="ew", pady=5)
+        msys_path_frame.columnconfigure(1, weight=1)
         
         # MVCU路径
         mvcu_frame = ttk.Frame(msys_path_frame, padding="2")
-        mvcu_frame.pack(fill=tk.X)
-        ttk.Label(mvcu_frame, text="MVCU路径:").pack(side=tk.LEFT, padx=5)
+        mvcu_frame.grid(row=0, column=0, sticky="ew")
+        mvcu_frame.columnconfigure(1, weight=1)
+        ttk.Label(mvcu_frame, text="MVCU路径:").grid(row=0, column=0, padx=5, sticky="w")
         
         self.mvcu_path_var = tk.StringVar()
         self.mvcu_path_var.set(mvcu_path if mvcu_path else "未设置")
-        ttk.Label(mvcu_frame, textvariable=self.mvcu_path_var).pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+        ttk.Label(mvcu_frame, textvariable=self.mvcu_path_var).grid(row=0, column=1, padx=5, sticky="ew")
         
         # SVCU路径
         svcu_frame = ttk.Frame(msys_path_frame, padding="2")
-        svcu_frame.pack(fill=tk.X)
-        ttk.Label(svcu_frame, text="SVCU路径:").pack(side=tk.LEFT, padx=5)
+        svcu_frame.grid(row=1, column=0, sticky="ew")
+        svcu_frame.columnconfigure(1, weight=1)
+        ttk.Label(svcu_frame, text="SVCU路径:").grid(row=0, column=0, padx=5, sticky="w")
         
         self.svcu_path_var = tk.StringVar()
         self.svcu_path_var.set(svcu_path if svcu_path else "未设置")
-        ttk.Label(svcu_frame, textvariable=self.svcu_path_var).pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+        ttk.Label(svcu_frame, textvariable=self.svcu_path_var).grid(row=0, column=1, padx=5, sticky="ew")
         
         # 显示操作日志的文本框
         log_frame = ttk.LabelFrame(main_frame, text="操作日志", padding="5")
-        log_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        log_frame.grid(row=3, column=0, sticky="nsew", pady=10)
+        main_frame.rowconfigure(3, weight=1)
         
         self.log_text = scrolledtext.ScrolledText(
-            log_frame, wrap=tk.WORD, width=70, height=15, font=("Consolas", 9)
+            log_frame, wrap=tk.WORD, font=("Consolas", 9)
         )
         self.log_text.pack(fill=tk.BOTH, expand=True)
         
         # 底部按钮区域
         btn_frame = ttk.Frame(main_frame, padding="5")
-        btn_frame.pack(fill=tk.X, pady=10)
+        btn_frame.grid(row=4, column=0, sticky="e", pady=10)
         
         self.compile_btn = ttk.Button(btn_frame, text="开始编译", command=self.start_compile)
-        self.compile_btn.pack(side=tk.RIGHT, padx=5)
-        
+        self.compile_btn.grid(row=0, column=1, padx=5)
+
         exit_btn = ttk.Button(btn_frame, text="退出", command=root.destroy)
-        exit_btn.pack(side=tk.RIGHT, padx=5)
+        exit_btn.grid(row=0, column=0, padx=5)
         
         # 状态条
         self.status_var = tk.StringVar()
         self.status_var.set("就绪")
         status_bar = ttk.Label(root, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W)
-        status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+        status_bar.grid(row=1, column=0, sticky="ew")
         
         # 初始化日志
         self.log("VCU编译器已启动，请选择源路径")
@@ -160,13 +175,24 @@ class VcuCompilerUI:
             self.root.after(500, self.update_compiler_paths)
     
     def log(self, message, is_error=False):
-        """向日志文本框添加消息"""
-        tag = "error" if is_error else "info"
-
+        """向日志文本框添加消息，并根据内容分配颜色"""
         if "info" not in self.log_text.tag_names():
             self.log_text.tag_configure("info", foreground="black")
         if "error" not in self.log_text.tag_names():
             self.log_text.tag_configure("error", foreground="red")
+        if "success" not in self.log_text.tag_names():
+            self.log_text.tag_configure("success", foreground="green")
+        if "warning" not in self.log_text.tag_names():
+            self.log_text.tag_configure("warning", foreground="orange")
+
+        if is_error or ("错误" in message or "失败" in message):
+            tag = "error"
+        elif "警告" in message:
+            tag = "warning"
+        elif "成功" in message or "完成" in message:
+            tag = "success"
+        else:
+            tag = "info"
 
         if message.startswith("["):
             formatted = message
