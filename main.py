@@ -152,9 +152,9 @@ def update_makefiles_with_correct_paths(callback=None):
     results = []  # 用于收集结果报告
     
     for makefile_path in makefile_paths:
+        # 预先判断makefile类型，确保在文件不存在的情况下也能记录
+        makefile_type = "MVCU" if "dev_kernel_mvcu" in makefile_path else "SVCU"
         if os.path.exists(makefile_path):
-            # 判断是哪个makefile
-            makefile_type = "MVCU" if "dev_kernel_mvcu" in makefile_path else "SVCU"
             show_message("Processing {} makefile...".format(makefile_type))
             
             # 尝试不同的编码
