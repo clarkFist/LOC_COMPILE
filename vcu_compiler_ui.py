@@ -123,13 +123,31 @@ class VcuCompilerUI:
         self.svcu_path_var = tk.StringVar()
         self.svcu_path_var.set(svcu_path if svcu_path else "未设置")
         ttk.Label(svcu_frame, textvariable=self.svcu_path_var).pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+
+        # Makefile 路径显示区域
+        makefile_frame = ttk.LabelFrame(main_frame, text="Makefile路径", padding="5")
+        makefile_frame.pack(fill=tk.X, pady=5)
+
+        mvcu_makefile_row = ttk.Frame(makefile_frame, padding="2")
+        mvcu_makefile_row.pack(fill=tk.X)
+        ttk.Label(mvcu_makefile_row, text="MVCU makefile:").pack(side=tk.LEFT, padx=5)
+
+        self.mvcu_makefile_var = tk.StringVar(value="-")
+        ttk.Label(mvcu_makefile_row, textvariable=self.mvcu_makefile_var).pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+
+        svcu_makefile_row = ttk.Frame(makefile_frame, padding="2")
+        svcu_makefile_row.pack(fill=tk.X)
+        ttk.Label(svcu_makefile_row, text="SVCU makefile:").pack(side=tk.LEFT, padx=5)
+
+        self.svcu_makefile_var = tk.StringVar(value="-")
+        ttk.Label(svcu_makefile_row, textvariable=self.svcu_makefile_var).pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
         
         # 显示操作日志的文本框
         log_frame = ttk.LabelFrame(main_frame, text="操作日志", padding="5")
         log_frame.pack(fill=tk.BOTH, expand=True, pady=10)
         
         self.log_text = scrolledtext.ScrolledText(
-            log_frame, wrap=tk.WORD, width=70, height=15, font=("Consolas", 9)
+            log_frame, wrap=tk.WORD, width=70, height=15, font=("Consolas", 9), state=tk.DISABLED
         )
         self.log_text.pack(fill=tk.BOTH, expand=True)
         
@@ -167,13 +185,21 @@ class VcuCompilerUI:
             self.log_text.tag_configure("info", foreground="black")
         if "error" not in self.log_text.tag_names():
             self.log_text.tag_configure("error", foreground="red")
+        if "success" not in self.log_text.tag_names():
+            self.log_text.tag_configure("success", foreground="green")
+
+        if not is_error and ("成功" in message or "success" in message.lower()):
+            tag = "success"
 
         if message.startswith("["):
             formatted = message
         else:
             timestamp = datetime.now().strftime("%H:%M:%S")
             formatted = f"[{timestamp}] {message}"
+
+        self.log_text.config(state=tk.NORMAL)
         self.log_text.insert(tk.END, formatted + "\n", tag)
+        self.log_text.config(state=tk.DISABLED)
         self.log_text.see(tk.END)  # 滚动到最新行
 
     
@@ -207,9 +233,16 @@ class VcuCompilerUI:
         """在线程中运行路径更新"""
         try:
             results = self.update_path_function(callback)
-            
+
             # 处理结果
             success = all(item["success"] for item in results) if results else False
+
+            for item in results:
+                if item.get("success") and item.get("path"):
+                    if item["type"] == "MVCU":
+                        self.mvcu_makefile_var.set(item["path"])
+                    elif item["type"] == "SVCU":
+                        self.svcu_makefile_var.set(item["path"])
             
             # 在UI线程中更新UI
             self.root.after(0, lambda: self._update_ui_after_path_update(success))

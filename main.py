@@ -176,7 +176,7 @@ def update_makefiles_with_correct_paths(callback=None):
                 
                 success_msg = "Successfully updated {} makefile: {}".format(makefile_type, makefile_path)
                 show_message(success_msg)
-                results.append({"type": makefile_type, "success": True, "message": success_msg})
+                results.append({"type": makefile_type, "success": True, "message": success_msg, "path": makefile_path})
             except Exception as e:
                 error_msg = "Failed to update makefile content: {}, error: {}".format(makefile_path, e)
                 show_message(error_msg, is_error=True)
