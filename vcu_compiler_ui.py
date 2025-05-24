@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""基于 tkinter 的图形界面，用于辅助 VCU 项目编译。"""
 
 import os
 import sys
@@ -102,6 +103,14 @@ update_msys_profile = None
 
 class VcuCompilerUI:
     def __init__(self, root, update_path_function=None, mvcu_path=None, svcu_path=None):
+        """构建并初始化主界面。
+
+        参数:
+            root: Tk 根窗口实例。
+            update_path_function: 更新 makefile 路径的回调函数。
+            mvcu_path: MSYS 环境下 MVCU 的编译路径。
+            svcu_path: MSYS 环境下 SVCU 的编译路径。
+        """
         self.root = root
         self.root.title("VCU编译器")
 
