@@ -6,6 +6,7 @@ import sys
 import argparse
 import subprocess
 import shutil
+from path_utils import get_application_path, get_resource_path
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import threading
@@ -26,35 +27,6 @@ def archive_output_files(output_dir):
 
     return dest_dir
 
-# 添加获取应用程序路径的函数
-def get_application_path():
-    """获取程序运行目录，用于存放输出等可写文件"""
-    if getattr(sys, 'frozen', False):
-        # 打包状态下返回可执行文件所在目录
-        return os.path.dirname(sys.executable)
-    else:
-        # 开发环境中返回项目根目录的上级目录
-        loc_dir = os.path.dirname(os.path.abspath(__file__))
-        return os.path.dirname(loc_dir)
-
-
-def get_resource_path(*path_parts):
-    """获取资源文件所在目录，兼容 PyInstaller
-    
-    根据用户需求，打包后的资源应该在exe同目录，而不是临时目录
-    """
-    if getattr(sys, 'frozen', False):
-        # 打包状态下，资源文件应该在exe所在目录，而非临时目录
-        base = os.path.dirname(sys.executable)
-    else:
-        # 开发环境中使用项目根目录
-        base = get_application_path()
-    
-    # 规范化路径，统一使用os.path.join处理
-    if path_parts:
-        return os.path.normpath(os.path.join(base, *path_parts))
-    else:
-        return os.path.normpath(base)
 
 # 确保项目目录结构正确存在
 def ensure_project_structure():

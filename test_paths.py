@@ -5,8 +5,7 @@
 import os
 import sys
 
-# 导入路径函数
-from main import get_application_path, get_resource_path
+from path_utils import get_application_path, get_resource_path
 
 def test_paths():
     """测试所有路径配置"""
