@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""主程序入口，提供命令行与图形界面两种交互方式。"""
 
 import os
 import sys

@@ -1,6 +1,7 @@
 import os
 import sys
 
+"""封装路径相关的辅助函数，兼容打包和开发两种环境。"""
 
 def get_application_path():
     """获取应用程序运行目录，用于存放输出等可写文件"""
