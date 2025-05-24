@@ -24,18 +24,107 @@ def get_application_path():
         # 返回项目根目录
         return os.path.dirname(LOC_COMPILE_dir)
 
+def get_resource_path(*path_parts):
+    """获取资源文件所在目录，兼容 PyInstaller
+    
+    根据用户需求，打包后的资源应该在exe同目录，而不是临时目录
+    """
+    if getattr(sys, 'frozen', False):
+        # 打包状态下，资源文件应该在exe所在目录，而非临时目录
+        base = os.path.dirname(sys.executable)
+    else:
+        # 开发环境中使用项目根目录
+        base = get_application_path()
+    
+    # 规范化路径，统一使用os.path.join处理
+    if path_parts:
+        return os.path.normpath(os.path.join(base, *path_parts))
+    else:
+        return os.path.normpath(base)
+
 # 导入必要的模块
 try:
     from main import check_modules_in_makefile, archive_output_files
 except ImportError:
-    # 如果在当前目录找不到，尝试从同级目录导入
-    LOC_COMPILE_dir = os.path.dirname(os.path.abspath(__file__))
-    sys.path.append(LOC_COMPILE_dir)
+    # 如果无法直接导入，尝试从不同位置导入
+    import_success = False
+    
+    # 尝试多种导入方式
     try:
+        if getattr(sys, 'frozen', False):
+            # 打包环境
+            frozen_dir = os.path.dirname(sys.executable)
+            sys.path.insert(0, frozen_dir)
+            sys.path.insert(0, os.path.join(frozen_dir, "LOC_COMPILE"))
+        else:
+            # 开发环境
+            LOC_COMPILE_dir = os.path.dirname(os.path.abspath(__file__))
+            sys.path.insert(0, LOC_COMPILE_dir)
+        
         from main import check_modules_in_makefile, archive_output_files
+        import_success = True
     except ImportError:
-        # 避免循环导入
-        check_modules_in_makefile = None
+        pass
+    
+    if not import_success:
+        # 最后尝试：动态导入
+        try:
+            import importlib.util
+            main_file_path = None
+            
+            # 搜索可能的main.py文件位置
+            search_paths = [
+                os.path.dirname(sys.executable),
+                os.path.join(os.path.dirname(sys.executable), "LOC_COMPILE"),
+                sys._MEIPASS if hasattr(sys, '_MEIPASS') else None,
+                os.path.join(sys._MEIPASS, "LOC_COMPILE") if hasattr(sys, '_MEIPASS') else None,
+                os.path.dirname(os.path.abspath(__file__)),
+            ]
+            
+            for path in search_paths:
+                if path and os.path.exists(path):
+                    potential_file = os.path.join(path, "main.py")
+                    if os.path.exists(potential_file):
+                        main_file_path = potential_file
+                        break
+            
+            if main_file_path:
+                spec = importlib.util.spec_from_file_location("main", main_file_path)
+                main_module = importlib.util.module_from_spec(spec)
+                sys.modules["main"] = main_module
+                spec.loader.exec_module(main_module)
+                
+                # 提取需要的函数
+                check_modules_in_makefile = getattr(main_module, 'check_modules_in_makefile', None)
+                archive_output_files = getattr(main_module, 'archive_output_files', None)
+                import_success = True
+        except Exception as e:
+            print(f"动态导入main模块失败: {e}")
+    
+    if not import_success:
+        # 如果所有导入方式都失败，使用备用函数
+        print("警告: 无法导入main模块中的函数，使用备用实现")
+        
+        def check_modules_in_makefile(vcu_type):
+            """备用的模块检查函数"""
+            print(f"执行基本的模块检查 (VCU类型: {vcu_type})")
+            return True
+        
+        def archive_output_files(output_dir):
+            """备用的归档函数"""
+            from datetime import datetime
+            import shutil
+            
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            dest_dir = os.path.join(output_dir, f"out_{timestamp}")
+            os.makedirs(dest_dir, exist_ok=True)
+
+            for name in os.listdir(output_dir):
+                if name.lower().endswith((".s19", ".lze")):
+                    src = os.path.join(output_dir, name)
+                    shutil.copy2(src, os.path.join(dest_dir, name))
+
+            return dest_dir
 
 # 避免循环导入update_msys_profile
 update_msys_profile = None

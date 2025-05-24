@@ -39,54 +39,131 @@ def get_application_path():
 
 
 def get_resource_path(*path_parts):
-    """获取资源文件所在目录，兼容 PyInstaller"""
+    """获取资源文件所在目录，兼容 PyInstaller
+    
+    根据用户需求，打包后的资源应该在exe同目录，而不是临时目录
+    """
     if getattr(sys, 'frozen', False):
-        base = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+        # 打包状态下，资源文件应该在exe所在目录，而非临时目录
+        base = os.path.dirname(sys.executable)
     else:
+        # 开发环境中使用项目根目录
         base = get_application_path()
-    return os.path.join(base, *path_parts)
+    
+    # 规范化路径，统一使用os.path.join处理
+    if path_parts:
+        return os.path.normpath(os.path.join(base, *path_parts))
+    else:
+        return os.path.normpath(base)
 
 # 确保项目目录结构正确存在
 def ensure_project_structure():
     """确保项目的基本目录结构在EXE所在目录正确存在"""
-    app_path = get_application_path()
-    
-    # 项目根目录
-    vcu_project_dir = os.path.join(app_path, "VCU_compile - selftest")
-    
-    # 检查并创建项目根目录
-    if not os.path.exists(vcu_project_dir):
-        os.makedirs(vcu_project_dir)
-        print(f"创建项目根目录: {vcu_project_dir}")
-    
-    # 确保MVCU和SVCU目录结构存在
-    mvcu_src_dir = os.path.join(vcu_project_dir, "dev_kernel_mvcu", "src")
-    mvcu_build_dir = os.path.join(vcu_project_dir, "dev_kernel_mvcu", "build")
-    mvcu_out_dir = os.path.join(mvcu_build_dir, "out")
-    
-    svcu_src_dir = os.path.join(vcu_project_dir, "dev_kernel_svcu", "src")
-    svcu_build_dir = os.path.join(vcu_project_dir, "dev_kernel_svcu", "build")
-    svcu_out_dir = os.path.join(svcu_build_dir, "out")
-    
-    # 创建必要的目录
-    for directory in [mvcu_src_dir, mvcu_build_dir, mvcu_out_dir, svcu_src_dir, svcu_build_dir, svcu_out_dir]:
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-            print(f"创建目录: {directory}")
+    try:
+        app_path = get_application_path()
+        
+        # 项目根目录
+        vcu_project_dir = os.path.join(app_path, "VCU_compile - selftest")
+        vcu_project_dir = os.path.normpath(vcu_project_dir)
+        
+        # 检查并创建项目根目录
+        if not os.path.exists(vcu_project_dir):
+            os.makedirs(vcu_project_dir)
+            print(f"创建项目根目录: {vcu_project_dir}")
+        
+        # 确保MVCU和SVCU目录结构存在
+        directories_to_create = [
+            os.path.join(vcu_project_dir, "dev_kernel_mvcu", "src"),
+            os.path.join(vcu_project_dir, "dev_kernel_mvcu", "build"),
+            os.path.join(vcu_project_dir, "dev_kernel_mvcu", "build", "out"),
+            os.path.join(vcu_project_dir, "dev_kernel_svcu", "src"),
+            os.path.join(vcu_project_dir, "dev_kernel_svcu", "build"),
+            os.path.join(vcu_project_dir, "dev_kernel_svcu", "build", "out"),
+        ]
+        
+        # 创建必要的目录
+        for directory in directories_to_create:
+            directory = os.path.normpath(directory)
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+                print(f"创建目录: {directory}")
+                
+        # 验证关键资源目录是否存在
+        resource_dirs = ["GCC", "CW", "MSYS-1.0.10-selftest"]
+        missing_dirs = []
+        
+        for res_dir in resource_dirs:
+            res_path = get_resource_path(res_dir)
+            if not os.path.exists(res_path):
+                missing_dirs.append(res_dir)
+        
+        if missing_dirs:
+            print(f"警告: 缺少以下资源目录: {', '.join(missing_dirs)}")
+            print("请确保这些目录与exe文件在同一目录下")
+            
+    except Exception as e:
+        print(f"创建项目结构时出错: {e}")
+        raise
 
 # 导入UI组件
 try:
     from vcu_compiler_ui import VcuCompilerUI
 except ImportError:
-    # 如果在同一目录下找不到，定义一个路径变量
-    script_dir = get_application_path()
-    LOC_COMPILE_dir = os.path.join(script_dir, "LOC_COMPILE")
-    sys.path.append(LOC_COMPILE_dir)
+    # 如果打包后无法直接导入，尝试从不同路径导入
+    import_success = False
+    
+    # 尝试从当前目录导入
     try:
+        if getattr(sys, 'frozen', False):
+            # 打包环境：尝试从临时目录或当前目录导入
+            frozen_dir = os.path.dirname(sys.executable)
+            sys.path.insert(0, frozen_dir)
+            sys.path.insert(0, os.path.join(frozen_dir, "LOC_COMPILE"))
+        else:
+            # 开发环境：添加LOC_COMPILE目录到路径
+            script_dir = get_application_path()
+            LOC_COMPILE_dir = os.path.join(script_dir, "LOC_COMPILE")
+            sys.path.insert(0, LOC_COMPILE_dir)
+        
         from vcu_compiler_ui import VcuCompilerUI
+        import_success = True
     except ImportError:
-        # 如果还是导入失败，会在后面处理
         pass
+    
+    if not import_success:
+        # 最后尝试：从PyInstaller的临时目录导入
+        try:
+            import importlib.util
+            ui_file_path = None
+            
+            # 搜索可能的UI文件位置
+            search_paths = [
+                os.path.dirname(sys.executable),
+                os.path.join(os.path.dirname(sys.executable), "LOC_COMPILE"),
+                sys._MEIPASS if hasattr(sys, '_MEIPASS') else None,
+                os.path.join(sys._MEIPASS, "LOC_COMPILE") if hasattr(sys, '_MEIPASS') else None,
+            ]
+            
+            for path in search_paths:
+                if path and os.path.exists(path):
+                    potential_file = os.path.join(path, "vcu_compiler_ui.py")
+                    if os.path.exists(potential_file):
+                        ui_file_path = potential_file
+                        break
+            
+            if ui_file_path:
+                spec = importlib.util.spec_from_file_location("vcu_compiler_ui", ui_file_path)
+                vcu_compiler_ui = importlib.util.module_from_spec(spec)
+                sys.modules["vcu_compiler_ui"] = vcu_compiler_ui
+                spec.loader.exec_module(vcu_compiler_ui)
+                VcuCompilerUI = vcu_compiler_ui.VcuCompilerUI
+                import_success = True
+        except Exception as e:
+            print(f"动态导入UI模块失败: {e}")
+    
+    if not import_success:
+        print("警告: 无法导入VcuCompilerUI模块，GUI模式可能不可用")
+        VcuCompilerUI = None
 
 def update_makefiles_with_correct_paths(callback=None):
     """
@@ -114,23 +191,26 @@ def update_makefiles_with_correct_paths(callback=None):
     # 获取资源路径
     script_dir = get_resource_path()
     
-    # 确保盘符是大写的
-    if script_dir.startswith("c:"):
-        script_dir = "C:" + script_dir[2:]
+    # 确保路径是规范化的
+    script_dir = os.path.normpath(script_dir)
+    
+    # 确保盘符是大写的（如果是Windows路径）
+    if script_dir and len(script_dir) >= 2 and script_dir[1] == ':':
+        script_dir = script_dir[0].upper() + script_dir[1:]
     
     # 获取CW和GCC的绝对路径
     cw_path = os.path.join(script_dir, "CW", "ColdFire_Tools", "Command_Line_Tools")
     gcc_path = os.path.join(script_dir, "GCC", "bin")
     
-    # 转换为Windows格式的路径 (使用正斜杠，如C:/Users/...)
-    win_cw_path = cw_path.replace("\\", "/")
-    win_gcc_path = gcc_path.replace("\\", "/")
+    # 转换为Windows格式的路径 (使用正斜杠，适用于makefile)
+    win_cw_path = cw_path.replace(os.sep, "/")
+    win_gcc_path = gcc_path.replace(os.sep, "/")
     
     # 确保路径中的盘符是大写的
-    if win_cw_path.startswith("c:/"):
-        win_cw_path = "C:" + win_cw_path[1:]
-    if win_gcc_path.startswith("c:/"):
-        win_gcc_path = "C:" + win_gcc_path[1:]
+    if win_cw_path and len(win_cw_path) >= 2 and win_cw_path[1] == ':':
+        win_cw_path = win_cw_path[0].upper() + win_cw_path[1:]
+    if win_gcc_path and len(win_gcc_path) >= 2 and win_gcc_path[1] == ':':
+        win_gcc_path = win_gcc_path[0].upper() + win_gcc_path[1:]
     
     show_message("Current directory: {}".format(script_dir))
     show_message("Setting compiler paths:")
@@ -215,23 +295,37 @@ def update_msys_profile():
     # 获取资源目录
     script_dir = get_resource_path()
     
-    # 确保盘符是大写的
-    if script_dir.startswith("c:"):
-        script_dir = "C:" + script_dir[2:]
+    # 确保路径是规范化的
+    script_dir = os.path.normpath(script_dir)
+    
+    # 确保盘符是大写的（如果是Windows路径）
+    if script_dir and len(script_dir) >= 2 and script_dir[1] == ':':
+        script_dir = script_dir[0].upper() + script_dir[1:]
     
     # 构建项目路径
     vcu_dir = os.path.join(script_dir, "VCU_compile - selftest")
+    vcu_dir = os.path.normpath(vcu_dir)
     
     # 构建MSYS profile路径
     profile_path = os.path.join(script_dir, "MSYS-1.0.10-selftest", "1.0", "etc", "profile")
+    profile_path = os.path.normpath(profile_path)
     
     if not os.path.exists(profile_path):
         print(f"警告: MSYS profile文件不存在: {profile_path}")
         return False, None, None
     
     # 将Windows路径转换为MSYS路径格式
-    msys_path_format = script_dir.replace("\\", "/").replace("C:", "/c")
-    vcu_path_format = vcu_dir.replace("\\", "/").replace("C:", "/c")
+    msys_path_format = script_dir.replace(os.sep, "/")
+    vcu_path_format = vcu_dir.replace(os.sep, "/")
+    
+    # 转换驱动器格式 (C: -> /c)
+    if msys_path_format and len(msys_path_format) >= 2 and msys_path_format[1] == ':':
+        drive_letter = msys_path_format[0].lower()
+        msys_path_format = f"/{drive_letter}" + msys_path_format[2:]
+    
+    if vcu_path_format and len(vcu_path_format) >= 2 and vcu_path_format[1] == ':':
+        drive_letter = vcu_path_format[0].lower()
+        vcu_path_format = f"/{drive_letter}" + vcu_path_format[2:]
     
     # 构建MSYS脚本内容
     mvcu_path = f"{vcu_path_format}/dev_kernel_mvcu/build"
@@ -472,11 +566,10 @@ def start_gui_mode():
         # 更新MSYS的profile文件，并获取路径信息
         success, mvcu_path, svcu_path = update_msys_profile()
         
-        # 尝试导入UI模块
-        try:
-            from vcu_compiler_ui import VcuCompilerUI
-        except ImportError:
+        # 检查VcuCompilerUI是否已成功导入
+        if VcuCompilerUI is None:
             print("错误: 无法导入VcuCompilerUI模块，请确保vcu_compiler_ui.py文件存在。")
+            messagebox.showerror("错误", "无法导入UI模块，程序将退出。\n请确保vcu_compiler_ui.py文件存在。")
             return False
         
         # 检查tkinter是否可用
@@ -494,6 +587,12 @@ def start_gui_mode():
     
     except Exception as e:
         print(f"启动GUI时出错: {e}")
+        try:
+            import tkinter as tk
+            from tkinter import messagebox
+            messagebox.showerror("错误", f"启动GUI时出错: {e}")
+        except:
+            pass
         return False
 
 def main():
@@ -559,6 +658,80 @@ def no_console_main():
         # 捕获所有异常，避免在无控制台模式时崩溃而无法看到错误信息
         messagebox.showerror("错误", f"程序运行时发生错误: {e}")
         sys.exit(1)
+
+def check_modules_in_makefile(vcu_type):
+    """检查模块是否都在makefile中
+    
+    参数:
+        vcu_type: VCU类型，'m' 表示MVCU，'s' 表示SVCU
+    """
+    try:
+        # 获取资源路径
+        script_dir = get_resource_path()
+        vcu_project_dir = os.path.join(script_dir, "VCU_compile - selftest")
+        
+        if vcu_type == "m":
+            src_dir = os.path.join(vcu_project_dir, "dev_kernel_mvcu", "src")
+            makefile_path = os.path.join(vcu_project_dir, "dev_kernel_mvcu", "build", "makefile")
+            print("检查MVCU模块...")
+        elif vcu_type == "s":
+            src_dir = os.path.join(vcu_project_dir, "dev_kernel_svcu", "src")
+            makefile_path = os.path.join(vcu_project_dir, "dev_kernel_svcu", "build", "makefile")
+            print("检查SVCU模块...")
+        else:
+            print(f"未知的VCU类型: {vcu_type}")
+            return False
+        
+        # 检查源目录是否存在
+        if not os.path.exists(src_dir):
+            print(f"源目录不存在: {src_dir}")
+            return False
+        
+        # 检查makefile是否存在
+        if not os.path.exists(makefile_path):
+            print(f"Makefile不存在: {makefile_path}")
+            return False
+        
+        # 获取所有.c文件
+        c_files = []
+        for root, dirs, files in os.walk(src_dir):
+            for file in files:
+                if file.lower().endswith('.c'):
+                    c_files.append(os.path.splitext(file)[0])  # 不带扩展名
+        
+        if not c_files:
+            print("在源目录中未找到.c文件")
+            return True
+        
+        # 读取makefile内容
+        try:
+            with open(makefile_path, 'r', encoding='utf-8') as f:
+                makefile_content = f.read()
+        except UnicodeDecodeError:
+            try:
+                with open(makefile_path, 'r', encoding='latin-1') as f:
+                    makefile_content = f.read()
+            except:
+                print("无法读取makefile文件")
+                return False
+        
+        # 检查每个模块是否在makefile中
+        missing_modules = []
+        for module in c_files:
+            if module not in makefile_content:
+                missing_modules.append(module)
+        
+        if missing_modules:
+            print(f"以下模块未在makefile中找到: {', '.join(missing_modules)}")
+            print("建议检查makefile配置")
+        else:
+            print("所有模块都已包含在makefile中")
+        
+        return len(missing_modules) == 0
+        
+    except Exception as e:
+        print(f"检查模块时出错: {e}")
+        return False
 
 if __name__ == "__main__":
     if getattr(sys, 'frozen', False):
