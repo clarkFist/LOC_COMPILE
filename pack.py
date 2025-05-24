@@ -8,13 +8,14 @@ import subprocess
 import sys
 from datetime import datetime
 import time
+from path_utils import get_application_path
 
 
 def build_executable():
     """使用 PyInstaller 打包項目"""
     loc_dir = os.path.dirname(os.path.abspath(__file__))
-    # 与 main.py 中的 get_application_path() 保持一致，资源目录位于上级
-    project_root = os.path.dirname(loc_dir)
+    # 统一使用公共路径函数，确保与主程序一致
+    project_root = get_application_path()
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     exe_name = f"LOC_COMPILE_{timestamp}"

@@ -6,41 +6,12 @@ import sys
 import subprocess
 import shutil
 import tkinter as tk
+from path_utils import get_application_path, get_resource_path
 from tkinter import filedialog, messagebox, ttk, scrolledtext
 
 import threading
 from datetime import datetime
 
-# 添加获取应用程序路径的函数
-def get_application_path():
-    """获取应用程序的实际路径，适用于打包后的EXE文件"""
-    if getattr(sys, 'frozen', False):
-        # 如果应用程序已被打包
-        return os.path.dirname(sys.executable)
-    else:
-        # 如果是直接运行脚本
-        # 获取当前脚本所在的LOC_COMPILE目录
-        LOC_COMPILE_dir = os.path.dirname(os.path.abspath(__file__))
-        # 返回项目根目录
-        return os.path.dirname(LOC_COMPILE_dir)
-
-def get_resource_path(*path_parts):
-    """获取资源文件所在目录，兼容 PyInstaller
-    
-    根据用户需求，打包后的资源应该在exe同目录，而不是临时目录
-    """
-    if getattr(sys, 'frozen', False):
-        # 打包状态下，资源文件应该在exe所在目录，而非临时目录
-        base = os.path.dirname(sys.executable)
-    else:
-        # 开发环境中使用项目根目录
-        base = get_application_path()
-    
-    # 规范化路径，统一使用os.path.join处理
-    if path_parts:
-        return os.path.normpath(os.path.join(base, *path_parts))
-    else:
-        return os.path.normpath(base)
 
 # 导入必要的模块
 try:
