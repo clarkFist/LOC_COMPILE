@@ -13,19 +13,13 @@ import threading
 import re
 from datetime import datetime
 
-# 输出结果归档函数
-def archive_output_files(output_dir):
-    """在输出目录下创建带时间戳的out文件夹，并复制 .s19 和 .lze 文件"""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    dest_dir = os.path.join(output_dir, f"out_{timestamp}")
-    os.makedirs(dest_dir, exist_ok=True)
-
-    for name in os.listdir(output_dir):
-        if name.lower().endswith((".s19", ".lze")):
-            src = os.path.join(output_dir, name)
-            shutil.copy2(src, os.path.join(dest_dir, name))
-
-    return dest_dir
+# 打开输出目录函数
+def open_output_dir(output_dir):
+    """直接打开输出目录"""
+    if os.path.exists(output_dir):
+        os.startfile(output_dir)
+        return output_dir
+    return None
 
 
 # 确保项目目录结构正确存在
@@ -514,9 +508,11 @@ def process_in_console_mode(source_path):
                 output_dir = None
 
             if output_dir and os.path.exists(output_dir):
-                archived_dir = archive_output_files(output_dir)
-                print(f"打开输出文件夹: {archived_dir}")
-                os.startfile(archived_dir)
+                opened_dir = open_output_dir(output_dir)
+                if opened_dir:
+                    print(f"打开输出文件夹: {opened_dir}")
+                else:
+                    print(f"无法打开输出文件夹: {output_dir}")
 
             return True
         else:

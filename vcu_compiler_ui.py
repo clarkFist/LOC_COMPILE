@@ -38,7 +38,7 @@ class ModuleImporter:
     
     def __init__(self):
         self.check_modules_in_makefile = None
-        self.archive_output_files = None
+        self.open_output_dir = None
         self.update_msys_profile = None
         self._import_functions()
     
@@ -63,9 +63,9 @@ class ModuleImporter:
     
     def _direct_import(self) -> bool:
         """直接导入策略"""
-        from main import check_modules_in_makefile, archive_output_files, update_msys_profile
+        from main import check_modules_in_makefile, open_output_dir, update_msys_profile
         self.check_modules_in_makefile = check_modules_in_makefile
-        self.archive_output_files = archive_output_files
+        self.open_output_dir = open_output_dir
         self.update_msys_profile = update_msys_profile
         return True
     
@@ -83,9 +83,9 @@ class ModuleImporter:
             if os.path.exists(path):
                 sys.path.insert(0, path)
         
-        from main import check_modules_in_makefile, archive_output_files, update_msys_profile
+        from main import check_modules_in_makefile, open_output_dir, update_msys_profile
         self.check_modules_in_makefile = check_modules_in_makefile
-        self.archive_output_files = archive_output_files
+        self.open_output_dir = open_output_dir
         self.update_msys_profile = update_msys_profile
         return True
     
@@ -110,7 +110,7 @@ class ModuleImporter:
                 spec.loader.exec_module(main_module)
                 
                 self.check_modules_in_makefile = getattr(main_module, 'check_modules_in_makefile', None)
-                self.archive_output_files = getattr(main_module, 'archive_output_files', None)
+                self.open_output_dir = getattr(main_module, 'open_output_dir', None)
                 self.update_msys_profile = getattr(main_module, 'update_msys_profile', None)
                 return True
         
@@ -122,22 +122,17 @@ class ModuleImporter:
             logger.info(f"执行基本的模块检查 (VCU类型: {vcu_type})")
             return True
         
-        def archive_output_files(output_dir):
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            dest_dir = Path(output_dir) / f"out_{timestamp}"
-            dest_dir.mkdir(exist_ok=True)
-            
-            for file_path in Path(output_dir).glob("*"):
-                if file_path.suffix.lower() in [".s19", ".lze"]:
-                    shutil.copy2(file_path, dest_dir / file_path.name)
-            
-            return str(dest_dir)
+        def open_output_dir(output_dir):
+            if Path(output_dir).exists():
+                os.startfile(output_dir)
+                return output_dir
+            return None
         
         def update_msys_profile():
             return False, None, None
         
         self.check_modules_in_makefile = check_modules_in_makefile
-        self.archive_output_files = archive_output_files
+        self.open_output_dir = open_output_dir
         self.update_msys_profile = update_msys_profile
 
 
@@ -726,16 +721,14 @@ class VcuCompilerUI:
             folder_name = "dev_kernel_mvcu" if self.current_vcu_type == "m" else "dev_kernel_svcu"
             output_dir = Path(script_dir) / "VCU_compile - selftest" / folder_name / "build" / "out"
             
-            if output_dir.exists() and self.importer.archive_output_files:
-                archived_dir = self.importer.archive_output_files(str(output_dir))
-                self._log(f"输出文件已归档到: {archived_dir}", "success")
-                
-                # 打开归档文件夹
-                if Path(archived_dir).exists():
-                    os.startfile(archived_dir)
-                    self._log("已打开输出文件夹", "success")
+            if output_dir.exists() and self.importer.open_output_dir:
+                opened_dir = self.importer.open_output_dir(str(output_dir))
+                if opened_dir:
+                    self._log(f"已打开输出文件夹: {opened_dir}", "success")
+                else:
+                    self._log(f"无法打开输出文件夹: {output_dir}", "warning")
             else:
-                self._log("输出目录不存在或归档功能不可用", "warning")
+                self._log("输出目录不存在或打开功能不可用", "warning")
                 
         except Exception as e:
             self._log(f"打开输出文件夹失败: {e}", "error")
