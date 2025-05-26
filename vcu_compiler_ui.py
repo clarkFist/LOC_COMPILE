@@ -183,7 +183,7 @@ class VcuCompilerUI:
         path_status_label.grid(row=0, column=1, padx=10, sticky="w")
         
         # 添加MSYS路径信息区域
-        msys_path_frame = ttk.LabelFrame(main_frame, text="MSYS路径信息", padding="5")
+        msys_path_frame = ttk.LabelFrame(main_frame, text="MSYS配置加载的build目录", padding="5")
         msys_path_frame.grid(row=2, column=0, sticky="ew", pady=5)
         msys_path_frame.columnconfigure(1, weight=1)
         
