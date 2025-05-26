@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""主程序入口，提供命令行与图形界面两种交互方式。"""
 
 import os
 import sys
@@ -148,7 +147,7 @@ def update_makefiles_with_correct_paths(callback=None):
     """
     # 用于记录和显示信息的帮助函数
     def show_message(message, is_error=False):
-        """按照统一格式记录并发送日志信息"""
+        """按照统一格式记录并发送日志信息"""    
 
         # 确保消息带有时间戳前缀
         if not message.startswith("["):
