@@ -1,0 +1,9 @@
+# LOC_COMPILE 项目依赖
+
+# 打包工具（可选）
+pyinstaller>=4.0
+
+# 注意：
+# - 本项目主要使用Python标准库
+# - tkinter为Python 3.x标准库，通常无需单独安装
+# - 仅在需要打包为exe时才需要安装pyinstaller 

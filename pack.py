@@ -71,6 +71,58 @@ def build_executable():
     for module in hidden_imports:
         cmd.extend(["--hidden-import", module])
 
+    # 添加tkinter DLL文件的显式包含
+    try:
+        import tkinter
+        python_dir = os.path.dirname(sys.executable)
+        
+        # 查找可能的DLL位置
+        dll_dirs = [
+            os.path.join(python_dir, "DLLs"),
+            os.path.join(python_dir, "Library", "bin"),  # Anaconda
+            os.path.join(os.path.dirname(python_dir), "DLLs"),  # 有些环境
+            os.path.join(os.path.dirname(python_dir), "Library", "bin"),  # Anaconda base
+        ]
+        
+        # tkinter相关的DLL文件名
+        tkinter_dlls = [
+            "tcl86t.dll", "tk86t.dll",  # Python 3.8+
+            "tcl90.dll", "tk90.dll",    # Python 3.12+
+            "_tkinter.pyd",
+        ]
+        
+        dll_found = False
+        for dll_dir in dll_dirs:
+            if os.path.exists(dll_dir):
+                print(f"检查DLL目录: {dll_dir}")
+                for dll_name in tkinter_dlls:
+                    dll_path = os.path.join(dll_dir, dll_name)
+                    if os.path.exists(dll_path):
+                        print(f"找到tkinter DLL: {dll_path}")
+                        cmd.extend(["--add-binary", f"{dll_path}{os.pathsep}."])
+                        dll_found = True
+                
+                # 批量添加tcl/tk相关文件
+                for file in os.listdir(dll_dir):
+                    if (file.lower().startswith(('tcl', 'tk')) and 
+                        file.lower().endswith(('.dll', '.pyd'))):
+                        dll_path = os.path.join(dll_dir, file)
+                        print(f"添加tcl/tk文件: {dll_path}")
+                        cmd.extend(["--add-binary", f"{dll_path}{os.pathsep}."])
+                        dll_found = True
+        
+        if not dll_found:
+            print("警告: 未找到tkinter DLL文件，可能会导致运行时错误")
+            print("尝试使用--collect-all tkinter选项")
+            cmd.extend(["--collect-all", "tkinter"])
+        else:
+            print("✓ 已添加tkinter DLL文件")
+            
+    except Exception as e:
+        print(f"警告: 处理tkinter DLL时出错: {e}")
+        print("尝试使用--collect-all tkinter选项")
+        cmd.extend(["--collect-all", "tkinter"])
+
     # 将整个LOC_COMPILE目录作为数据包含
     cmd.extend(["--add-data", f"{loc_dir}{os.pathsep}LOC_COMPILE"])
 
@@ -397,6 +449,35 @@ def verify_dependencies():
             print(f"✗ {module} 模块不可用")
             return False
     
+    # 检查tkinter DLL文件
+    try:
+        import tkinter
+        python_dir = os.path.dirname(sys.executable)
+        
+        dll_dirs = [
+            os.path.join(python_dir, "DLLs"),
+            os.path.join(python_dir, "Library", "bin"),
+            os.path.join(os.path.dirname(python_dir), "DLLs"),
+            os.path.join(os.path.dirname(python_dir), "Library", "bin"),
+        ]
+        
+        tkinter_dll_found = False
+        for dll_dir in dll_dirs:
+            if os.path.exists(dll_dir):
+                for file in os.listdir(dll_dir):
+                    if file.lower().startswith(('tcl', 'tk')) and file.lower().endswith('.dll'):
+                        tkinter_dll_found = True
+                        print(f"✓ 找到tkinter DLL: {os.path.join(dll_dir, file)}")
+                        break
+                if tkinter_dll_found:
+                    break
+        
+        if not tkinter_dll_found:
+            print("⚠ 警告: 未找到tkinter DLL文件，将使用--collect-all tkinter选项")
+        
+    except Exception as e:
+        print(f"⚠ 警告: 检查tkinter DLL时出错: {e}")
+    
     # 检查源文件
     loc_dir = os.path.dirname(os.path.abspath(__file__))
     main_py = os.path.join(loc_dir, "main.py")
@@ -430,7 +511,13 @@ def main():
             sys.exit(1)
         
         print("\n开始打包...")
-        exe_path = build_executable()
+        try:
+            exe_path = build_executable()
+        except Exception as e:
+            print(f"✗ 标准打包方法失败: {e}")
+            print("\n尝试备用打包方法...")
+            exe_path = build_executable_alternative()
+            
         print("\n" + "=" * 50)
         print("✓ 打包成功完成！")
         print(f"✓ 生成文件: {exe_path}")
@@ -469,6 +556,64 @@ def main():
         print("请检查项目配置和依赖项")
         input("按任意键退出...")
         sys.exit(1)
+
+
+def build_executable_alternative():
+    """备用打包方法：使用更保守的策略处理tkinter依赖"""
+    loc_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = get_application_path()
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    exe_name = f"LOC_COMPILE_alt_{timestamp}"
+
+    dist_dir = os.path.join(project_root, "dist")
+    build_dir = os.path.join(project_root, "build")
+    release_dir = os.path.join(project_root, "release")
+
+    # 清理舊的輸出
+    for d in (dist_dir, build_dir):
+        if os.path.exists(d):
+            shutil.rmtree(d)
+
+    # 备用PyInstaller命令 - 使用更保守的策略
+    cmd = [
+        sys.executable,
+        "-m",
+        "PyInstaller",
+        "--clean",
+        "--onefile",
+        "--console",  # 使用控制台模式，便于调试
+        "--name",
+        exe_name,
+        "--collect-all", "tkinter",  # 收集整个tkinter包
+        "--collect-all", "tkinter.ttk",
+        "--hidden-import", "tkinter",
+        "--hidden-import", "tkinter.ttk",
+        "--hidden-import", "tkinter.filedialog",
+        "--hidden-import", "tkinter.messagebox",
+        "--hidden-import", "tkinter.scrolledtext",
+        "--hidden-import", "_tkinter",  # 底层tkinter模块
+        # 主入口文件
+        os.path.join(loc_dir, "main.py"),
+    ]
+
+    print("执行备用打包命令:", " ".join(cmd))
+    try:
+        subprocess.check_call(cmd)
+    except subprocess.CalledProcessError as e:
+        print(f"备用打包也失败，错误代码: {e.returncode}")
+        raise
+
+    exe_path = os.path.join(dist_dir, f"{exe_name}.exe")
+    if not os.path.exists(exe_path):
+        raise FileNotFoundError(f"生成的exe文件不存在: {exe_path}")
+    
+    os.makedirs(release_dir, exist_ok=True)
+    final_path = os.path.join(release_dir, f"{exe_name}.exe")
+    shutil.move(exe_path, final_path)
+
+    print(f"备用打包完成，生成文件: {final_path}")
+    return final_path
 
 
 if __name__ == "__main__":
