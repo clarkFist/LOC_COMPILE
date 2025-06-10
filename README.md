@@ -40,7 +40,9 @@
 # 双击运行或在命令行执行
 setup_env.bat
 ```
-etup_env.py
+#### macOS/Linux 用户
+```bash
+python setup_env.py
 ```
 
 ### 📦 依赖安装选项
@@ -49,7 +51,8 @@ etup_env.py
 
 | 📋 文件 | 🎯 用途 | 📝 说明 |
 |---------|---------|---------|
-| `requirements.txt` | 🛠️ 完整开发 | 包含开发工具和代码检查 |~~~~
+| `requirements.txt` | 🛠️ 完整开发 | 包含开发工具和代码检查 |
+| `requirements-minimal.txt` | 💡 最小运行 | 仅包含运行所需依赖 |
 | `setup_env.py` | 🤖 自动安装 | 智能检测并安装环境 |
 
 ```bash
@@ -120,12 +123,7 @@ python setup_env.py
 
 ## 📦 打包发布
 
-```bash
-# 一键打包为exe文件
-python pack.py
-```
-
-📁 生成的exe文件位置: `dist/LOC_COMPILE_YYYYMMDD_HHMMSS.exe`
+项目可使用PyInstaller等工具打包为可执行文件，生成的文件位于`dist/`目录。
 
 ---
 
@@ -177,7 +175,6 @@ python pack.py
 📁 LOC_COMPILE/
 ├── 📄 main.py                 # 🚀 主程序入口
 ├── 🎨 vcu_compiler_ui.py      # 🖼️ GUI界面实现
-├── 📦 pack.py                 # 📦 打包脚本
 ├── 🛠️ path_utils.py           # 📍 路径工具函数
 ├── 📚 README.md               # 📖 项目文档
 └── 📋 requirements.txt        # 📝 依赖列表
@@ -200,7 +197,7 @@ python pack.py
 
 ## 📞 获取帮助
 
-遇到问题？请查看或者记录 [`bug_log.md`](bug_log.md) 文件获取更多故障排除信息。
+如需进一步排查问题，可记录错误日志供开发者分析。
 
 ---
 
