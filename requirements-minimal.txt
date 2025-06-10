@@ -1,0 +1,21 @@
+# LOC_COMPILE 项目最小依赖
+# 仅包含运行时必需的依赖包
+
+# ==== 核心依赖 ====
+# 打包工具 - 用于将项目打包为exe文件
+pyinstaller>=5.0,<7.0
+
+# 类型注解支持 (Python 3.5+需要，3.8+内置)
+typing-extensions>=4.0.0; python_version<"3.8"
+
+# ==== 系统兼容性 ====
+# Windows系统增强
+pywin32>=227; sys_platform=="win32"
+
+# ==== 说明 ====
+# 本项目主要使用Python标准库，外部依赖较少
+# tkinter为Python标准库，在大多数Python安装中都包含
+# 此文件仅包含运行时必需的依赖
+
+# ==== 安装命令 ====
+# pip install -r requirements-minimal.txt 

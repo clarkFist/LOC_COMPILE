@@ -8,12 +8,18 @@ import subprocess
 import sys
 from datetime import datetime
 import time
+
+# 添加父目录到路径以便导入path_utils
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from path_utils import get_application_path
 
 
 def build_executable():
     """使用 PyInstaller 打包項目"""
-    loc_dir = os.path.dirname(os.path.abspath(__file__))
+    # 获取脚本所在目录（scripts目录）
+    scripts_dir = os.path.dirname(os.path.abspath(__file__))
+    # 获取项目根目录（LOC_COMPILE目录）
+    loc_dir = os.path.dirname(scripts_dir)
     # 统一使用公共路径函数，确保与主程序一致
     project_root = get_application_path()
 
@@ -479,7 +485,8 @@ def verify_dependencies():
         print(f"⚠ 警告: 检查tkinter DLL时出错: {e}")
     
     # 检查源文件
-    loc_dir = os.path.dirname(os.path.abspath(__file__))
+    scripts_dir = os.path.dirname(os.path.abspath(__file__))
+    loc_dir = os.path.dirname(scripts_dir)
     main_py = os.path.join(loc_dir, "main.py")
     ui_py = os.path.join(loc_dir, "vcu_compiler_ui.py")
     
@@ -496,6 +503,33 @@ def verify_dependencies():
         return False
     
     return True
+
+
+def open_release_directory(exe_path):
+    """自动打开.exe文件所在目录"""
+    try:
+        release_dir = os.path.dirname(exe_path)
+        print(f"\n正在打开目录: {release_dir}")
+        
+        # Windows系统使用os.startfile
+        if os.name == 'nt':
+            os.startfile(release_dir)
+            print("✓ 已在文件资源管理器中打开release目录")
+        else:
+            # 其他系统的处理
+            try:
+                subprocess.run(['xdg-open', release_dir], check=True)
+                print("✓ 已打开release目录")
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                try:
+                    subprocess.run(['open', release_dir], check=True)  # macOS
+                    print("✓ 已打开release目录")
+                except (subprocess.CalledProcessError, FileNotFoundError):
+                    print(f"无法自动打开目录，请手动访问: {release_dir}")
+                    
+    except Exception as e:
+        print(f"打开目录时出错: {e}")
+        print(f"请手动访问: {os.path.dirname(exe_path)}")
 
 
 def main():
@@ -523,22 +557,13 @@ def main():
         print(f"✓ 生成文件: {exe_path}")
         print("=" * 50)
         
-        # 询问是否打开release目录
-        try:
-            import msvcrt
-            print("\n按任意键打开release目录，或等待5秒自动退出...")
-            i = 0
-            while i < 50:  # 5秒 = 50 * 0.1秒
-                if msvcrt.kbhit():
-                    msvcrt.getch()
-                    release_dir = os.path.dirname(exe_path)
-                    os.startfile(release_dir)
-                    break
-                time.sleep(0.1)
-                i += 1
-        except ImportError:
-            input("按回车键退出...")
-            
+        # 自动打开.exe文件所在目录
+        open_release_directory(exe_path)
+        
+        # 等待用户确认退出
+        print("\n打包完成，目录已自动打开")
+        input("按回车键退出...")
+        
     except FileNotFoundError as e:
         if "PyInstaller" in str(e):
             print("✗ 错误: 未找到 PyInstaller，请先安装: pip install pyinstaller")
@@ -560,7 +585,8 @@ def main():
 
 def build_executable_alternative():
     """备用打包方法：使用更保守的策略处理tkinter依赖"""
-    loc_dir = os.path.dirname(os.path.abspath(__file__))
+    scripts_dir = os.path.dirname(os.path.abspath(__file__))
+    loc_dir = os.path.dirname(scripts_dir)
     project_root = get_application_path()
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -617,4 +643,4 @@ def build_executable_alternative():
 
 
 if __name__ == "__main__":
-    main()
+    main() 

@@ -11,6 +11,9 @@ import subprocess
 import platform
 from pathlib import Path
 
+# 添加父目录到路径以便导入path_utils
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 def print_info(message):
     """打印信息"""
@@ -84,16 +87,21 @@ def check_pip():
 
 def install_dependencies(minimal=True):
     """安装依赖包"""
-    requirements_file = "requirements-minimal.txt" if minimal else "requirements.txt"
+    # 获取项目根目录中的requirements文件
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(script_dir)
     
-    if not Path(requirements_file).exists():
-        print_error(f"依赖文件不存在: {requirements_file}")
+    requirements_file = "requirements-minimal.txt" if minimal else "requirements.txt"
+    requirements_path = os.path.join(project_root, requirements_file)
+    
+    if not os.path.exists(requirements_path):
+        print_error(f"依赖文件不存在: {requirements_path}")
         return False
     
     print_info(f"安装依赖包 ({requirements_file})...")
     try:
         subprocess.check_call([
-            sys.executable, "-m", "pip", "install", "-r", requirements_file
+            sys.executable, "-m", "pip", "install", "-r", requirements_path
         ])
         print_success("依赖包安装完成 ✓")
         return True
