@@ -7,7 +7,8 @@ from pathlib import Path
 def run_cmd(command):
     """运行命令并打印输出，出错时抛出异常"""
     result = subprocess.run(command, shell=True, text=True,
-                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                           encoding='utf-8', errors='replace')
     if result.stdout:
         print(result.stdout)
     if result.returncode != 0:
@@ -56,7 +57,8 @@ def ensure_in_git_repo():
         # 先尝试直接检查
         subprocess.run("git rev-parse --is-inside-work-tree", 
                       shell=True, check=True,
-                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                      stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                      encoding='utf-8', errors='replace')
         print(f"✓ 当前目录已是git仓库: {Path.cwd()}")
         return True
     except subprocess.CalledProcessError:
@@ -81,7 +83,8 @@ def ensure_in_git_repo():
 def has_changes():
     """检查是否有需要提交的更改"""
     result = subprocess.run("git status --porcelain", shell=True,
-                           stdout=subprocess.PIPE, text=True)
+                           stdout=subprocess.PIPE, text=True,
+                           encoding='utf-8', errors='replace')
     return bool(result.stdout.strip())
 
 
@@ -99,11 +102,15 @@ def safe_push(message="更新脚本快速更新"):
         except subprocess.CalledProcessError as e:
             # 获取实际的错误输出
             error_output = getattr(e, 'output', str(e))
+            print(f"拉取时遇到问题: {error_output}")
+            
             if "unstaged changes" in error_output or "uncommitted changes" in error_output or "cannot pull with rebase" in error_output:
                 print("⚠ 检测到未提交的更改，先进行提交...")
                 if has_changes():
+                    print("📝 添加所有更改...")
                     run_cmd("git add -A")
-                    run_cmd(f"git commit -m \"{message}\"")
+                    print(f"💾 提交更改: {message}")
+                    run_cmd(f'git commit -m "{message}"')
                     print("✓ 更改已提交，重新尝试拉取...")
                     try:
                         run_cmd("git pull --rebase")
@@ -114,7 +121,11 @@ def safe_push(message="更新脚本快速更新"):
                     print("⚠ 尝试使用stash处理...")
                     run_cmd("git stash")
                     run_cmd("git pull --rebase")
-                    run_cmd("git stash pop")
+                    try:
+                        run_cmd("git stash pop")
+                    except subprocess.CalledProcessError as stash_error:
+                        print(f"⚠ stash pop失败: {stash_error}")
+                        print("可能没有需要恢复的stash内容")
             else:
                 raise
         
@@ -122,7 +133,7 @@ def safe_push(message="更新脚本快速更新"):
         if has_changes():
             print("📝 发现新的更改，正在提交...")
             run_cmd("git add -A")
-            run_cmd(f"git commit -m \"{message}\"")
+            run_cmd(f'git commit -m "{message}"')
         else:
             print("✓ 没有新的更改需要提交")
         
@@ -131,7 +142,8 @@ def safe_push(message="更新脚本快速更新"):
         print("✅ 推送完成！")
         
     except subprocess.CalledProcessError as e:
-        print(f"❌ 命令执行失败: {e}")
+        error_output = getattr(e, 'output', str(e))
+        print(f"❌ 命令执行失败: {error_output}")
         print("请检查网络连接和git配置")
     except Exception as e:
         print(f"❌ 发生未知错误: {e}")
