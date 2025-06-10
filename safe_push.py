@@ -95,6 +95,14 @@ def safe_push(message="更新脚本快速更新"):
         if not ensure_in_git_repo():
             return
         
+        # 检查当前分支
+        result = subprocess.run("git branch --show-current", shell=True,
+                               stdout=subprocess.PIPE, text=True,
+                               encoding='utf-8', errors='replace')
+        current_branch = result.stdout.strip()
+        if current_branch:
+            print(f"📍 当前分支: {current_branch}")
+        
         print("📥 正在拉取最新代码...")
         # 拉取最新代码，先处理可能的冲突
         try:
@@ -125,7 +133,7 @@ def safe_push(message="更新脚本快速更新"):
                         run_cmd("git stash pop")
                     except subprocess.CalledProcessError as stash_error:
                         print(f"⚠ stash pop失败: {stash_error}")
-                        print("可能没有需要恢复的stash内容")
+                        print("可能没有需要恢复的stash内容，或存在冲突需要手动解决")
             else:
                 raise
         
@@ -138,6 +146,8 @@ def safe_push(message="更新脚本快速更新"):
             print("✓ 没有新的更改需要提交")
         
         print("📤 正在推送到远程仓库...")
+        if current_branch:
+            print(f"📤 推送分支 {current_branch} 到远程仓库...")
         run_cmd("git push")
         print("✅ 推送完成！")
         
