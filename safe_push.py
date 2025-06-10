@@ -75,7 +75,7 @@ def ensure_in_git_repo():
             print("  1. 在git仓库目录中运行脚本")
             print("  2. 在包含git仓库子目录的父目录中运行脚本")
             print("  3. 先初始化git仓库 (git init)")
-            return False
+            return False 
 
 
 def has_changes():
