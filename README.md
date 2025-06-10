@@ -29,6 +29,43 @@
 
 ---
 
+## 🚀 快速开始
+
+### 💨 一键环境设置
+
+本项目提供了自动化的环境设置工具，让您快速开始使用：
+
+#### Windows用户 (推荐)
+```batch
+# 双击运行或在命令行执行
+setup_env.bat
+```
+etup_env.py
+```
+
+### 📦 依赖安装选项
+
+项目提供了三种依赖安装方式：
+
+| 📋 文件 | 🎯 用途 | 📝 说明 |
+|---------|---------|---------|
+| `requirements-minimal.txt` | 🏃 快速运行 | 仅包含运行时必需依赖 |
+| `requirements.txt` | 🛠️ 完整开发 | 包含开发工具和代码检查 |
+| `setup_env.py` | 🤖 自动安装 | 智能检测并安装环境 |
+
+```bash
+# 最小安装 (推荐新用户)
+pip install -r requirements-minimal.txt
+
+# 完整安装 (开发者推荐)  
+pip install -r requirements.txt
+
+# 自动检测安装
+python setup_env.py
+```
+
+---
+
 ## 📁 目录结构
 
 确保以下目录与exe文件在同一级别：

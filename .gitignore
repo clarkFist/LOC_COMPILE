@@ -1,0 +1,207 @@
+# ==== Python相关 ====
+# 字节码缓存
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 分发和打包
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# 单元测试
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# 环境变量文件
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Spyder
+.spyderproject
+.spyproject
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# ==== 项目特定文件 ====
+# 编译输出目录
+release/
+temp/
+tmp/
+
+# 日志文件
+*.log
+logs/
+
+# 临时文件
+*.temp
+*.tmp
+*~
+
+# 备份文件
+*.bak
+*.backup
+*_backup
+
+# ==== VCU项目相关 ====
+# Eclipse元数据
+.metadata/
+.settings/
+.project
+.cproject
+.pydevproject
+
+# CodeWarrior项目文件
+*.pjt
+*.mem
+*.map
+
+# 编译产物
+*.o
+*.obj
+*.elf
+*.hex
+*.bin
+*.s19
+*.mot
+
+# 构建目录
+**/build/out/
+**/build/*.log
+**/build/*.txt
+
+# ==== 系统文件 ====
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon*
+._*
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ==== 版本控制 ====
+# Git
+.git/
+*.orig
+
+# SVN
+.svn/
+
+# ==== 压缩文件 ====
+*.7z
+*.rar
+*.zip
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.gz
+*.bz2
+*.xz
+
+# ==== 办公文档临时文件 ====
+~$*
+*.docx#
+*.xlsx#
+*.pptx#
+
+# ==== 自定义排除 ====
+# 大文件目录（如果不需要版本控制）
+# CW/
+# GCC/
+# MSYS-1.0.10-selftest/
+
+# 用户特定配置
+config.local
+settings.local
+
+# 测试和调试文件
+debug/
+test_output/
+*.debug
+
+# 性能分析文件
+*.prof
+*.pstats
+
+# 文档生成
+docs/_build/
+site/
+
+# ==== 注意事项 ====
+# 如果需要包含某些被排除的文件，使用 !filename 语法
+# 例如：!important_config.py
+
+# 项目根目录重要文件应该被包含
+!README.md
+!requirements.txt
+!.gitignore 
