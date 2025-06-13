@@ -5,12 +5,13 @@
 # 打包工具 - 用于将项目打包为exe文件
 pyinstaller>=5.0,<7.0
 
-# 类型注解支持 (Python 3.5+需要，3.8+内置)
-typing-extensions>=4.0.0; python_version<"3.8"
+# Windows系统增强 (仅在Windows平台安装)
+pywin32>=227; sys_platform=="win32"
 
 # ==== GUI界面依赖 ====
-# tkinter - 图形界面框架 (Python标准库，通常无需安装)
+# tkinter - 图形界面框架 (Python标准库)
 # 注意：某些Linux发行版需要单独安装python3-tk包
+# 在Windows和大多数Python安装中无需额外安装
 
 # ==== 开发和测试工具 (可选) ====
 # 代码格式化工具
@@ -18,29 +19,24 @@ black>=22.0.0
 
 # 代码检查工具
 flake8>=4.0.0
-pylint>=2.12.0
 
 # 类型检查工具
 mypy>=0.910
 
-# ==== 项目特定依赖 ====
-# 路径处理增强 (用于更好的路径操作)
-pathlib2>=2.3.0; python_version<"3.4"
-
-# 日志记录增强 (可选)
-colorlog>=6.0.0
-
-# ==== 系统兼容性 ====
-# Windows系统增强
-pywin32>=227; sys_platform=="win32"
-
-# ==== 说明 ====
-# 本项目主要使用Python标准库，外部依赖较少
-# tkinter为Python标准库，在大多数Python安装中都包含
-# 仅在需要打包为exe时才必须安装pyinstaller
-# 开发工具为可选安装，用于代码质量检查和格式化
+# ==== 项目说明 ====
+# 本项目主要使用Python标准库模块：
+# - os, sys (系统操作)
+# - subprocess (进程调用)
+# - shutil (文件操作)
+# - pathlib (路径处理)
+# - tkinter (GUI界面)
+# - threading (多线程)
+# - datetime (时间处理)
+# - re (正则表达式)
+# - argparse (命令行参数)
+# - logging (日志记录)
 
 # ==== 安装命令 ====
-# 基础运行环境: pip install pyinstaller
+# 基础运行环境: pip install pyinstaller pywin32
 # 完整开发环境: pip install -r requirements.txt
-# 仅打包工具: pip install pyinstaller>=5.0 
+# 仅核心依赖: pip install pyinstaller pywin32 
